@@ -2,7 +2,7 @@
     A simple jQuery modal (http://github.com/kylefox/jquery-modal)
     Version 0.6.1
 */
-(function($) {
+module.exports = function($){
 
   var current = null;
 
@@ -209,4 +209,4 @@
     event.preventDefault();
     $(this).modal();
   });
-})(jQuery);
+};
