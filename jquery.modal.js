@@ -1,152 +1,158 @@
-/*
-    A simple jQuery modal (http://github.com/kylefox/jquery-modal)
-    Version 0.6.1
-*/
-
 'use strict';
 
-module.exports = function($){
+let _ = require('underscore');
+let jquery = require('jquery');
 
-  let current = null;
-
-  $.modal = function(el, options) {
-    $.modal.close(); // Close any open modals.
-    var remove, target;
-    this.$body = $('body');
-    this.options = $.extend({}, $.modal.defaults, options);
-    this.options.doFade = !isNaN(parseInt(this.options.fadeDuration, 10));
+let Modal = function(el, options) {
+    Modal.close(); // Close any open modals.
+    let remove, target;
+    this.$body = jquery('body');
+    this.options = _.extend({}, Modal.defaults, options);
+    this.options.doFade = false;
     this.$elm = el;
     this.$body.append(this.$elm);
     this.open();
-  };
+    Modal.current = this;
+};
 
-  $.modal.prototype = {
-    constructor: $.modal,
+Modal.current = null;
+
+Modal.prototype = {
+    constructor: Modal,
 
     open: function() {
-      var m = this;
-      if(this.options.doFade) {
-        this.block();
-        setTimeout(function() {
-          m.show();
-        }, this.options.fadeDuration * this.options.fadeDelay);
-      } else {
-        this.block();
-        this.show();
-      }
-      if (this.options.escapeClose) {
-        $(document).on('keydown.modal', function(event) {
-          if (event.which == 27) $.modal.close();
+        let m = this;
+        if (this.options.doFade) {
+            this.block();
+            setTimeout(function() {
+                m.show();
+            }, this.options.fadeDuration * this.options.fadeDelay);
+        } else {
+            this.block();
+            this.show();
+        }
+        if (this.options.escapeClose) {
+            jquery(document).on('keydown.modal', function(event) {
+                if (event.which == 27) Modal.close();
+            });
+        }
+        if (this.options.clickClose) this.blocker.click(function(e) {
+            if (e.target == this)
+                Modal.close();
         });
-      }
-      if (this.options.clickClose) this.blocker.click(function(e){
-        if (e.target==this)
-          $.modal.close();
-      });
     },
 
     close: function() {
-      this.unblock();
-      this.hide();
-      $(document).off('keydown.modal');
+        this.unblock();
+        this.hide();
+        jquery(document).off('keydown.modal');
     },
 
     block: function() {
-      this.$elm.trigger($.modal.BEFORE_BLOCK, [this._ctx()]);
-      this.blocker = $('<div class="jquery-modal blocker"></div>');
-      this.$body.css('overflow','hidden');
-      this.$body.append(this.blocker);
-      if(this.options.doFade) {
-        this.blocker.css('opacity',0).animate({opacity: 1}, this.options.fadeDuration);
-      }
-      this.$elm.trigger($.modal.BLOCK, [this._ctx()]);
+        this.$elm.trigger(Modal.BEFORE_BLOCK, [this._ctx()]);
+        this.blocker = jquery('<div class="jquery-modal blocker"></div>');
+        this.$body.css('overflow', 'hidden');
+        this.$body.append(this.blocker);
+        if (this.options.doFade) {
+            this.blocker.css('opacity', 0).animate({
+                opacity: 1
+            }, this.options.fadeDuration);
+        }
+        this.$elm.trigger(Modal.BLOCK, [this._ctx()]);
     },
 
     unblock: function() {
-      if(this.options.doFade) {
-        var self=this;
-        this.blocker.fadeOut(this.options.fadeDuration, function() {
-          self.blocker.children().appendTo(self.$body);
-          self.blocker.remove();
-          self.$body.css('overflow','');
-        });
-      } else {
-        this.blocker.children().appendTo(this.$body);
-        this.blocker.remove();
-        this.$body.css('overflow','');
-      }
+        if (this.options.doFade) {
+            let self = this;
+            this.blocker.fadeOut(this.options.fadeDuration, function() {
+                self.blocker.children().appendTo(self.$body);
+                self.blocker.remove();
+                self.$body.css('overflow', '');
+            });
+        } else {
+            this.blocker.children().appendTo(this.$body);
+            this.blocker.remove();
+            this.$body.css('overflow', '');
+        }
     },
 
     show: function() {
-      this.$elm.trigger($.modal.BEFORE_OPEN, [this._ctx()]);
-      if (this.options.showClose) {
-        this.closeButton = $('<a href="#close-modal" rel="modal:close" class="close-modal ' + this.options.closeClass + '">' + this.options.closeText + '</a>');
-        this.$elm.append(this.closeButton);
-        this.closeButton.click(function(){
-		$.modal.close();
-	});
-      }
-      this.$elm.addClass(this.options.modalClass + ' current');
-      this.$elm.appendTo(this.blocker);
-      if(this.options.doFade) {
-        this.$elm.css('opacity',0).show().animate({opacity: 1}, this.options.fadeDuration);
-      } else {
-        this.$elm.show();
-      }
-      this.$elm.trigger($.modal.OPEN, [this._ctx()]);
+        let self = this;
+        this.$elm.trigger(Modal.BEFORE_OPEN, [this._ctx()]);
+        if (this.options.showClose) {
+            this.closeButton = jquery('<a href="javascript:;" class="close-modal ' + this.options.closeClass + '">' + this.options.closeText + '</a>');
+            this.$elm.append(this.closeButton);
+            this.closeButton.click(function() {
+                self.close();
+            });
+        }
+        this.$elm.addClass(this.options.modalClass + ' current');
+        this.$elm.appendTo(this.blocker);
+        if (this.options.doFade) {
+            this.$elm.css('opacity', 0).show().animate({
+                opacity: 1
+            }, this.options.fadeDuration);
+        } else {
+            this.$elm.show();
+        }
+        this.$elm.trigger(Modal.OPEN, [this._ctx()]);
     },
 
     hide: function() {
-      this.$elm.trigger($.modal.BEFORE_CLOSE, [this._ctx()]);
-      if (this.closeButton) this.closeButton.remove();
-      this.$elm.removeClass('current');
+        this.$elm.trigger(Modal.BEFORE_CLOSE, [this._ctx()]);
+        if (this.closeButton) this.closeButton.remove();
+        this.$elm.removeClass('current');
 
-      var _this = this;
-      if(this.options.doFade) {
-        this.$elm.fadeOut(this.options.fadeDuration, function () {
-          _this.$elm.trigger($.modal.AFTER_CLOSE, [_this._ctx()]);
-        });
-      } else {
-        this.$elm.hide(0, function () {
-          _this.$elm.trigger($.modal.AFTER_CLOSE, [_this._ctx()]);
-        });
-      }
-      this.$elm.trigger($.modal.CLOSE, [this._ctx()]);
+        let self = this;
+        if (this.options.doFade) {
+            this.$elm.fadeOut(this.options.fadeDuration, function() {
+                self.$elm.trigger(Modal.AFTER_CLOSE, [self._ctx()]);
+            });
+        } else {
+            this.$elm.hide(0, function() {
+                self.$elm.trigger(Modal.AFTER_CLOSE, [self._ctx()]);
+            });
+        }
+        this.$elm.trigger(Modal.CLOSE, [this._ctx()]);
     },
 
     showSpinner: function() {
-      if (!this.options.showSpinner) return;
-      this.spinner = this.spinner || $('<div class="' + this.options.modalClass + '-spinner"></div>')
-        .append(this.options.spinnerHtml);
-      this.$body.append(this.spinner);
-      this.spinner.show();
+        if (!this.options.showSpinner) return;
+        this.spinner = this.spinner || jquery('<div class="' + this.options.modalClass + '-spinner"></div>')
+            .append(this.options.spinnerHtml);
+        this.$body.append(this.spinner);
+        this.spinner.show();
     },
 
     hideSpinner: function() {
-      if (this.spinner) this.spinner.remove();
+        if (this.spinner) this.spinner.remove();
     },
 
     //Return context for custom events
     _ctx: function() {
-      return { elm: this.$elm, blocker: this.blocker, options: this.options };
+        return {
+            elm: this.$elm,
+            blocker: this.blocker,
+            options: this.options
+        };
     }
-  };
+};
 
-  $.modal.close = function(event) {
-    if (!current) return;
+Modal.close = function(event) {
+    if (!Modal.current) return;
     if (event) event.preventDefault();
-    current.close();
-    var that = current.$elm;
-    current = null;
+    Modal.current.close();
+    let that = Modal.current.$elm;
+    Modal.current = null;
     return that;
-  };
+};
 
-  // Returns if there currently is an active modal
-  $.modal.isActive = function () {
-    return current ? true : false;
-  }
+// Returns if there currently is an active modal
+Modal.isActive = function() {
+    return Modal.current ? true : false;
+}
 
-  $.modal.defaults = {
+Modal.defaults = {
     escapeClose: true,
     clickClose: true,
     closeText: 'Close',
@@ -155,22 +161,22 @@ module.exports = function($){
     spinnerHtml: null,
     showSpinner: true,
     showClose: true,
-    fadeDuration: null,   // Number of milliseconds the fade animation takes.
-    fadeDelay: 1.0        // Point during the overlay's fade-in that the modal begins to fade in (.5 = 50%, 1.5 = 150%, etc.)
-  };
-
-  // Event constants
-  $.modal.BEFORE_BLOCK = 'modal:before-block';
-  $.modal.BLOCK = 'modal:block';
-  $.modal.BEFORE_OPEN = 'modal:before-open';
-  $.modal.OPEN = 'modal:open';
-  $.modal.BEFORE_CLOSE = 'modal:before-close';
-  $.modal.CLOSE = 'modal:close';
-  $.modal.AFTER_CLOSE = 'modal:after-close';
-  $.modal.AJAX_SEND = 'modal:ajax:send';
-  $.modal.AJAX_SUCCESS = 'modal:ajax:success';
-  $.modal.AJAX_FAIL = 'modal:ajax:fail';
-  $.modal.AJAX_COMPLETE = 'modal:ajax:complete';
-
-  return $.modal;
+    fadeDuration: null, // Number of milliseconds the fade animation takes.
+    fadeDelay: 1.0 // Point during the overlay's fade-in that the modal begins to fade in (.5 = 50%, 1.5 = 150%, etc.)
 };
+
+// Event constants
+Modal.BEFORE_BLOCK = 'modal:before-block';
+Modal.BLOCK = 'modal:block';
+Modal.BEFORE_OPEN = 'modal:before-open';
+Modal.OPEN = 'modal:open';
+Modal.BEFORE_CLOSE = 'modal:before-close';
+Modal.CLOSE = 'modal:close';
+Modal.AFTER_CLOSE = 'modal:after-close';
+Modal.AJAX_SEND = 'modal:ajax:send';
+Modal.AJAX_SUCCESS = 'modal:ajax:success';
+Modal.AJAX_FAIL = 'modal:ajax:fail';
+Modal.AJAX_COMPLETE = 'modal:ajax:complete';
+
+module.exports = Modal;
+
