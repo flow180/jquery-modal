@@ -2,9 +2,12 @@
     A simple jQuery modal (http://github.com/kylefox/jquery-modal)
     Version 0.6.1
 */
+
+'use strict';
+
 module.exports = function($){
 
-  var current = null;
+  let current = null;
 
   $.modal = function(el, options) {
     $.modal.close(); // Close any open modals.
@@ -12,39 +15,9 @@ module.exports = function($){
     this.$body = $('body');
     this.options = $.extend({}, $.modal.defaults, options);
     this.options.doFade = !isNaN(parseInt(this.options.fadeDuration, 10));
-    if (el.is('a')) {
-      target = el.attr('href');
-      //Select element by id from href
-      if (/^#/.test(target)) {
-        this.$elm = $(target);
-        if (this.$elm.length !== 1) return null;
-        this.$body.append(this.$elm);
-        this.open();
-      //AJAX
-      } else {
-        this.$elm = $('<div>');
-        this.$body.append(this.$elm);
-        remove = function(event, modal) { modal.elm.remove(); };
-        this.showSpinner();
-        el.trigger($.modal.AJAX_SEND);
-        $.get(target).done(function(html) {
-          if (!current) return;
-          el.trigger($.modal.AJAX_SUCCESS);
-          current.$elm.empty().append(html).on($.modal.CLOSE, remove);
-          current.hideSpinner();
-          current.open();
-          el.trigger($.modal.AJAX_COMPLETE);
-        }).fail(function() {
-          el.trigger($.modal.AJAX_FAIL);
-          current.hideSpinner();
-          el.trigger($.modal.AJAX_COMPLETE);
-        });
-      }
-    } else {
-      this.$elm = el;
-      this.$body.append(this.$elm);
-      this.open();
-    }
+    this.$elm = el;
+    this.$body.append(this.$elm);
+    this.open();
   };
 
   $.modal.prototype = {
@@ -109,6 +82,9 @@ module.exports = function($){
       if (this.options.showClose) {
         this.closeButton = $('<a href="#close-modal" rel="modal:close" class="close-modal ' + this.options.closeClass + '">' + this.options.closeText + '</a>');
         this.$elm.append(this.closeButton);
+        this.closeButton.click(function(){
+		$.modal.close();
+	});
       }
       this.$elm.addClass(this.options.modalClass + ' current');
       this.$elm.appendTo(this.blocker);
@@ -196,17 +172,5 @@ module.exports = function($){
   $.modal.AJAX_FAIL = 'modal:ajax:fail';
   $.modal.AJAX_COMPLETE = 'modal:ajax:complete';
 
-  $.fn.modal = function(options){
-    if (this.length === 1) {
-      current = new $.modal(this, options);
-    }
-    return this;
-  };
-
-  // Automatically bind links with rel="modal:close" to, well, close the modal.
-  $(document).on('click.modal', 'a[rel="modal:close"]', $.modal.close);
-  $(document).on('click.modal', 'a[rel="modal:open"]', function(event) {
-    event.preventDefault();
-    $(this).modal();
-  });
+  return $.modal;
 };
