@@ -14,5 +14,8 @@
     "gulp-conventional-changelog": "^0.7.0",
     "gulp-rename": "^1.2.2",
     "gulp-uglify": "^1.4.1"
+  },
+  "browserify": {
+    "transform": [["babelify", { "presets": ["es2015"] }]]
   }
 }
